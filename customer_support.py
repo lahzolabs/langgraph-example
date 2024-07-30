@@ -696,12 +696,14 @@ builder.add_edge(START, "fetch_user_info")
 
 ######################################################################################################
 # Sales assistant
+SALES_ASSISTANT = "sales_assistant"
+ENTER_SALES_ASSISTANT="enter_sales_assistant"
 builder.add_node(
-    "enter_sales_assistant",
-    create_entry_node("Sales Assistant", "sales_assistant"),
+    ENTER_SALES_ASSISTANT,
+    create_entry_node("Sales Assistant", SALES_ASSISTANT),
 )
-builder.add_node("sales_assistant", Assistant(sales_runnable))
-builder.add_edge("enter_sales_assistant", "sales_assistant")
+builder.add_node(SALES_ASSISTANT, Assistant(sales_runnable))
+builder.add_edge(ENTER_SALES_ASSISTANT, SALES_ASSISTANT)
 builder.add_node(
     "sales_sensitive_tools",
     create_tool_node_with_fallback(sales_sensitive_tools),
@@ -733,9 +735,9 @@ def route_sales_assistant(
     return "sales_sensitive_tools"
 
 
-builder.add_edge("sales_sensitive_tools", "sales_assistant")
-builder.add_edge("sales_safe_tools", "sales_assistant")
-builder.add_conditional_edges("sales_assistant", route_sales_assistant)
+builder.add_edge("sales_sensitive_tools", SALES_ASSISTANT)
+builder.add_edge("sales_safe_tools", SALES_ASSISTANT)
+builder.add_conditional_edges(SALES_ASSISTANT, route_sales_assistant)
 
 
 # This node will be shared for exiting all specialized assistants
@@ -912,7 +914,7 @@ def route_primary_assistant(
     tool_calls = state["messages"][-1].tool_calls
     if tool_calls:
         if tool_calls[0]["name"] == ToSalesAssistant.__name__:
-            return "enter_sales_assistant"
+            return ENTER_SALES_ASSISTANT
         # elif tool_calls[0]["name"] == ToBookCarRental.__name__:
         #     return "enter_book_car_rental"
         # elif tool_calls[0]["name"] == ToHotelBookingAssistant.__name__:
@@ -928,14 +930,14 @@ def route_primary_assistant(
 builder.add_conditional_edges(
     "primary_assistant",
     route_primary_assistant,
-    # {
-    #     "enter_update_flight": "enter_update_flight",
-    #     "enter_book_car_rental": "enter_book_car_rental",
-    #     "enter_book_hotel": "enter_book_hotel",
-    #     "enter_book_excursion": "enter_book_excursion",
-    #     "primary_assistant_tools": "primary_assistant_tools",
-    #     END: END,
-    # },
+    {
+        ENTER_SALES_ASSISTANT: ENTER_SALES_ASSISTANT,
+        # "enter_book_car_rental": "enter_book_car_rental",
+        # "enter_book_hotel": "enter_book_hotel",
+        # "enter_book_excursion": "enter_book_excursion",
+        "primary_assistant_tools": "primary_assistant_tools",
+        END: END,
+    },
 )
 builder.add_edge("primary_assistant_tools", "primary_assistant")
 
