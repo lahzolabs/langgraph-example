@@ -571,6 +571,38 @@ trade_in_runnable = trade_in_prompt | llm.bind_tools(
     trade_in_tools + [CompleteOrEscalate]
 )
 
+# Rephraser Assistant
+def get_last_message(state: dict)-> str:
+    return {"response": state["messages"][-1].content}
+
+rephraser_prompt = ChatPromptTemplate.from_messages(
+    [
+        (
+            "system",
+            """
+            Rephrase the following <RESPONSE> to match the <CRITERIA> below.
+
+            <RESPONSE>
+            {response}
+            </RESPONSE>
+
+            <CRITERIA>
+            - Is short, consisting of no more than two or three sentences.
+            - Ends in a single question to keep the conversation going.
+            - Maintains a kind, direct, concise, helpful, and slightly playful tone similar to a park ranger.
+            - Use short sentences, often one or two words (e.g. "Of course", "Excellent", "Wonderful", "Great", "Good choice", " Okay, great", "Certainly", "No problem", "You got it").
+            - Refrains from using emojis.
+            </CRITERIA>
+
+            IMPORTANT: Output only your rephrased response.
+            """
+        ),
+    ]
+).partial(time=datetime.now())
+
+rephraserLambda = RunnableLambda(get_last_message)
+rephraser_runnable = rephraserLambda | rephraser_prompt | llm
+
 
 # Primary Assistant
 class ToSalesAssistant(BaseModel):
@@ -720,11 +752,12 @@ def route_sales_assistant(
     "sales_sensitive_tools",
     "sales_safe_tools",
     "leave_skill",
+    "rephraser",
     "__end__",
 ]:
     route = tools_condition(state)
     if route == END:
-        return END
+        return REPHRASER
     tool_calls = state["messages"][-1].tool_calls
     did_cancel = any(tc["name"] == CompleteOrEscalate.__name__ for tc in tool_calls)
     if did_cancel:
@@ -738,6 +771,13 @@ def route_sales_assistant(
 builder.add_edge("sales_sensitive_tools", SALES_ASSISTANT)
 builder.add_edge("sales_safe_tools", SALES_ASSISTANT)
 builder.add_conditional_edges(SALES_ASSISTANT, route_sales_assistant)
+
+######################################
+# Rephraser
+REPHRASER = "rephraser"
+
+builder.add_node(REPHRASER, rephraser_runnable)
+builder.add_edge(REPHRASER, END)
 
 
 # This node will be shared for exiting all specialized assistants
@@ -906,11 +946,12 @@ def route_primary_assistant(
     "enter_sales_assistant",
     # "enter_book_hotel",
     # "enter_book_excursion",
+    "rephraser",
     "__end__",
 ]:
     route = tools_condition(state)
     if route == END:
-        return END
+        return REPHRASER
     tool_calls = state["messages"][-1].tool_calls
     if tool_calls:
         if tool_calls[0]["name"] == ToSalesAssistant.__name__:
@@ -936,7 +977,7 @@ builder.add_conditional_edges(
         # "enter_book_hotel": "enter_book_hotel",
         # "enter_book_excursion": "enter_book_excursion",
         "primary_assistant_tools": "primary_assistant_tools",
-        END: END,
+        REPHRASER: REPHRASER,
     },
 )
 builder.add_edge("primary_assistant_tools", "primary_assistant")
