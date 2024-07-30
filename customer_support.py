@@ -10,7 +10,7 @@ from langgraph.graph.message import AnyMessage, add_messages
 from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.graph import END, StateGraph, START
 from langgraph.prebuilt import tools_condition
-from langchain_anthropic import ChatAnthropic
+from langchain_anthropic import ChatAnthropic, Anthropic
 from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import Runnable, RunnableConfig
@@ -584,10 +584,6 @@ rephraser_prompt = ChatPromptTemplate.from_messages(
             """
             Rephrase the following <RESPONSE> to match the <CRITERIA> below.
 
-            <RESPONSE>
-            {response}
-            </RESPONSE>
-
             <CRITERIA>
             - Is short, consisting of no more than two or three sentences.
             - Ends in a single question to keep the conversation going.
@@ -599,6 +595,14 @@ rephraser_prompt = ChatPromptTemplate.from_messages(
             IMPORTANT: Output only your rephrased response.
             """
         ),
+        (
+            "human",
+            """
+            <RESPONSE>
+            {response}
+            </RESPONSE>
+            """
+        )
     ]
 ).partial(time=datetime.now())
 
