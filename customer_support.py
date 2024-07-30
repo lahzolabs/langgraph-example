@@ -19,6 +19,8 @@ from langgraph.graph.message import AnyMessage, add_messages
 from dotenv import load_dotenv
 load_dotenv()
 
+REPHRASER = "rephraser"
+
 
 # db_url = "https://storage.googleapis.com/benchmarks-artifacts/travel-db/travel2.sqlite"
 # local_file = "travel2.sqlite"
@@ -651,7 +653,7 @@ class ToTradeIn(BaseModel):
 # The top-level assistant performs general Q&A and delegates specialized tasks to other assistants.
 # The task delegation is a simple form of semantic routing / does simple intent detection
 # llm = ChatAnthropic(model="claude-3-haiku-20240307")
-llm = ChatAnthropic(model="claude-3-sonnet-20240229", temperature=1)
+# llm = ChatAnthropic(model="claude-3-sonnet-20240229", temperature=1)
 
 primary_assistant_prompt = ChatPromptTemplate.from_messages(
     [
@@ -753,7 +755,6 @@ def route_sales_assistant(
     "sales_safe_tools",
     "leave_skill",
     "rephraser",
-    "__end__",
 ]:
     route = tools_condition(state)
     if route == END:
@@ -770,11 +771,16 @@ def route_sales_assistant(
 
 builder.add_edge("sales_sensitive_tools", SALES_ASSISTANT)
 builder.add_edge("sales_safe_tools", SALES_ASSISTANT)
-builder.add_conditional_edges(SALES_ASSISTANT, route_sales_assistant)
+builder.add_conditional_edges(SALES_ASSISTANT, route_sales_assistant, {
+    "sales_sensitive_tools": "sales_sensitive_tools",
+    "sales_safe_tools": "sales_safe_tools",
+    "leave_skill": "leave_skill",
+    REPHRASER: REPHRASER,
+})
 
 ######################################
 # Rephraser
-REPHRASER = "rephraser"
+
 
 builder.add_node(REPHRASER, rephraser_runnable)
 builder.add_edge(REPHRASER, END)
@@ -947,7 +953,6 @@ def route_primary_assistant(
     # "enter_book_hotel",
     # "enter_book_excursion",
     "rephraser",
-    "__end__",
 ]:
     route = tools_condition(state)
     if route == END:
