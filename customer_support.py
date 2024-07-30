@@ -120,14 +120,6 @@ class VectorStoreRetriever:
 retriever = VectorStoreRetriever.from_docs(docs, openai.Client())
 
 
-@tool
-def lookup_policy(query: str) -> str:
-    """Consult the company policies to check whether certain options are permitted.
-    Use this before making any flight changes performing other 'write' events."""
-    docs = retriever.query(query, k=2)
-    return "\n\n".join([doc["page_content"] for doc in docs])
-
-
 
 import sqlite3
 from datetime import date, datetime
@@ -136,612 +128,62 @@ from typing import Optional
 import pytz
 from langchain_core.runnables import ensure_config
 
+# Sales Assistant Tools
+#dealership_by_name, dealership_locator, send_contanct_info
+@tool
+def dealership_by_name() -> str:
+    """
+    Search for a dealership by name.
+    """
+
+    return "The dealership is Tucker, GA. It opens at 6am and closes at 6pm."
 
 @tool
-def fetch_user_flight_information() -> list[dict]:
-    """Fetch all tickets for the user along with corresponding flight information and seat assignments.
-
-    Returns:
-        A list of dictionaries where each dictionary contains the ticket details,
-        associated flight details, and the seat assignments for each ticket belonging to the user.
+def dealership_locator(zip_code: str) -> str:
     """
-    # config = ensure_config()  # Fetch from the context
-    # configuration = config.get("configurable", {})
-    # passenger_id = configuration.get("passenger_id", None)
-    # if not passenger_id:
-    #     raise ValueError("No passenger ID configured.")
-
-    # conn = sqlite3.connect(db)
-    # cursor = conn.cursor()
-
-    # query = """
-    # SELECT 
-    #     t.ticket_no, t.book_ref,
-    #     f.flight_id, f.flight_no, f.departure_airport, f.arrival_airport, f.scheduled_departure, f.scheduled_arrival,
-    #     bp.seat_no, tf.fare_conditions
-    # FROM 
-    #     tickets t
-    #     JOIN ticket_flights tf ON t.ticket_no = tf.ticket_no
-    #     JOIN flights f ON tf.flight_id = f.flight_id
-    #     JOIN boarding_passes bp ON bp.ticket_no = t.ticket_no AND bp.flight_id = f.flight_id
-    # WHERE 
-    #     t.passenger_id = ?
-    # """
-    # cursor.execute(query, (passenger_id,))
-    # rows = cursor.fetchall()
-    # column_names = [column[0] for column in cursor.description]
-    # results = [dict(zip(column_names, row)) for row in rows]
-
-    # cursor.close()
-    # conn.close()
-
-    # return results
-    return "This user has one ticket from NY to SF"
-
+    Locate the nearest dealership to the user's zip code.
+    """
+    return "The nearest dealership is in Tucker, GA"
 
 @tool
-def search_flights(
-    departure_airport: Optional[str] = None,
-    arrival_airport: Optional[str] = None,
-    start_time: Optional[date | datetime] = None,
-    end_time: Optional[date | datetime] = None,
-    limit: int = 20,
-) -> list[dict]:
-    """Search for flights based on departure airport, arrival airport, and departure time range."""
-    # conn = sqlite3.connect(db)
-    # cursor = conn.cursor()
+def send_contanct_info(name: str, phone: str=None, email: str=None) -> str:
+    """
+    Send the contact information to the dealership.
+    """
+    return "The contact information has been sent to the dealership."
 
-    # query = "SELECT * FROM flights WHERE 1 = 1"
-    # params = []
-
-    # if departure_airport:
-    #     query += " AND departure_airport = ?"
-    #     params.append(departure_airport)
-
-    # if arrival_airport:
-    #     query += " AND arrival_airport = ?"
-    #     params.append(arrival_airport)
-
-    # if start_time:
-    #     query += " AND scheduled_departure >= ?"
-    #     params.append(start_time)
-
-    # if end_time:
-    #     query += " AND scheduled_departure <= ?"
-    #     params.append(end_time)
-    # query += " LIMIT ?"
-    # params.append(limit)
-    # cursor.execute(query, params)
-    # rows = cursor.fetchall()
-    # column_names = [column[0] for column in cursor.description]
-    # results = [dict(zip(column_names, row)) for row in rows]
-
-    # cursor.close()
-    # conn.close()
-
-    # return results
-    return "There is one flight to SF from NY"
-
+# Inventory Assistant Tools
+# check_rv_inventory_by_dealership, check_rv_inventory_by_zipcode
+@tool
+def check_rv_inventory_by_dealership(dealership_name: str, rv_model: str="") -> str:
+    """
+    Check the RV inventory by dealership name.
+    """
+    return "The RV inventory at the dealership is as follows: ..."
 
 @tool
-def update_ticket_to_new_flight(ticket_no: str, new_flight_id: int) -> str:
-    """Update the user's ticket to a new valid flight."""
-    # config = ensure_config()
-    # configuration = config.get("configurable", {})
-    # passenger_id = configuration.get("passenger_id", None)
-    # if not passenger_id:
-    #     raise ValueError("No passenger ID configured.")
+def check_rv_inventory_by_zipcode(zip_code: str, rv_model: str="") -> str:
+    """
+    Check the RV inventory by zip code.
+    """
+    return "The RV inventory at the dealership is as follows: ..."
 
-    # conn = sqlite3.connect(db)
-    # cursor = conn.cursor()
-
-    # cursor.execute(
-    #     "SELECT departure_airport, arrival_airport, scheduled_departure FROM flights WHERE flight_id = ?",
-    #     (new_flight_id,),
-    # )
-    # new_flight = cursor.fetchone()
-    # if not new_flight:
-    #     cursor.close()
-    #     conn.close()
-    #     return "Invalid new flight ID provided."
-    # column_names = [column[0] for column in cursor.description]
-    # new_flight_dict = dict(zip(column_names, new_flight))
-    # timezone = pytz.timezone("Etc/GMT-3")
-    # current_time = datetime.now(tz=timezone)
-    # departure_time = datetime.strptime(
-    #     new_flight_dict["scheduled_departure"], "%Y-%m-%d %H:%M:%S.%f%z"
-    # )
-    # time_until = (departure_time - current_time).total_seconds()
-    # if time_until < (3 * 3600):
-    #     return f"Not permitted to reschedule to a flight that is less than 3 hours from the current time. Selected flight is at {departure_time}."
-
-    # cursor.execute(
-    #     "SELECT flight_id FROM ticket_flights WHERE ticket_no = ?", (ticket_no,)
-    # )
-    # current_flight = cursor.fetchone()
-    # if not current_flight:
-    #     cursor.close()
-    #     conn.close()
-    #     return "No existing ticket found for the given ticket number."
-
-    # # Check the signed-in user actually has this ticket
-    # cursor.execute(
-    #     "SELECT * FROM tickets WHERE ticket_no = ? AND passenger_id = ?",
-    #     (ticket_no, passenger_id),
-    # )
-    # current_ticket = cursor.fetchone()
-    # if not current_ticket:
-    #     cursor.close()
-    #     conn.close()
-    #     return f"Current signed-in passenger with ID {passenger_id} not the owner of ticket {ticket_no}"
-
-    # # In a real application, you'd likely add additional checks here to enforce business logic,
-    # # like "does the new departure airport match the current ticket", etc.
-    # # While it's best to try to be *proactive* in 'type-hinting' policies to the LLM
-    # # it's inevitably going to get things wrong, so you **also** need to ensure your
-    # # API enforces valid behavior
-    # cursor.execute(
-    #     "UPDATE ticket_flights SET flight_id = ? WHERE ticket_no = ?",
-    #     (new_flight_id, ticket_no),
-    # )
-    # conn.commit()
-
-    # cursor.close()
-    # conn.close()
-    # return "Ticket successfully updated to new flight."
-    return "Ticket successfully updated to new flight."
-
+# Scheduling Assistant Tools
+# schedule_visit_by_inventory, schedule_visit_by_location
+@tool
+def schedule_visit_by_inventory(inventory_url: str) -> str:
+    """
+    Schedule a visit based on the inventory item.
+    """
+    return "The visit has been scheduled for the specified RV unit."
 
 @tool
-def cancel_ticket(ticket_no: str) -> str:
-    """Cancel the user's ticket and remove it from the database."""
-    # config = ensure_config()
-    # configuration = config.get("configurable", {})
-    # passenger_id = configuration.get("passenger_id", None)
-    # if not passenger_id:
-    #     raise ValueError("No passenger ID configured.")
-    # conn = sqlite3.connect(db)
-    # cursor = conn.cursor()
-
-    # cursor.execute(
-    #     "SELECT flight_id FROM ticket_flights WHERE ticket_no = ?", (ticket_no,)
-    # )
-    # existing_ticket = cursor.fetchone()
-    # if not existing_ticket:
-    #     cursor.close()
-    #     conn.close()
-    #     return "No existing ticket found for the given ticket number."
-
-    # # Check the signed-in user actually has this ticket
-    # cursor.execute(
-    #     "SELECT flight_id FROM tickets WHERE ticket_no = ? AND passenger_id = ?",
-    #     (ticket_no, passenger_id),
-    # )
-    # current_ticket = cursor.fetchone()
-    # if not current_ticket:
-    #     cursor.close()
-    #     conn.close()
-    #     return f"Current signed-in passenger with ID {passenger_id} not the owner of ticket {ticket_no}"
-
-    # cursor.execute("DELETE FROM ticket_flights WHERE ticket_no = ?", (ticket_no,))
-    # conn.commit()
-
-    # cursor.close()
-    # conn.close()
-    return "Ticket successfully cancelled."
-
-
-from datetime import date, datetime
-from typing import Optional, Union
-
-
-@tool
-def search_car_rentals(
-    location: Optional[str] = None,
-    name: Optional[str] = None,
-    price_tier: Optional[str] = None,
-    start_date: Optional[Union[datetime, date]] = None,
-    end_date: Optional[Union[datetime, date]] = None,
-) -> list[dict]:
+def schedule_visit_by_location(dealership_name: str) -> str:
     """
-    Search for car rentals based on location, name, price tier, start date, and end date.
-
-    Args:
-        location (Optional[str]): The location of the car rental. Defaults to None.
-        name (Optional[str]): The name of the car rental company. Defaults to None.
-        price_tier (Optional[str]): The price tier of the car rental. Defaults to None.
-        start_date (Optional[Union[datetime, date]]): The start date of the car rental. Defaults to None.
-        end_date (Optional[Union[datetime, date]]): The end date of the car rental. Defaults to None.
-
-    Returns:
-        list[dict]: A list of car rental dictionaries matching the search criteria.
+    Schedule a visit based on the customer's zip code.
     """
-    # conn = sqlite3.connect(db)
-    # cursor = conn.cursor()
+    return "The visit has been scheduled at the specified dealership."
 
-    # query = "SELECT * FROM car_rentals WHERE 1=1"
-    # params = []
-
-    # if location:
-    #     query += " AND location LIKE ?"
-    #     params.append(f"%{location}%")
-    # if name:
-    #     query += " AND name LIKE ?"
-    #     params.append(f"%{name}%")
-    # # For our tutorial, we will let you match on any dates and price tier.
-    # # (since our toy dataset doesn't have much data)
-    # cursor.execute(query, params)
-    # results = cursor.fetchall()
-
-    # conn.close()
-
-    # return [
-    #     dict(zip([column[0] for column in cursor.description], row)) for row in results
-    # ]
-    return [{}]
-
-
-@tool
-def book_car_rental(rental_id: int) -> str:
-    """
-    Book a car rental by its ID.
-
-    Args:
-        rental_id (int): The ID of the car rental to book.
-
-    Returns:
-        str: A message indicating whether the car rental was successfully booked or not.
-    """
-    # conn = sqlite3.connect(db)
-    # cursor = conn.cursor()
-
-    # cursor.execute("UPDATE car_rentals SET booked = 1 WHERE id = ?", (rental_id,))
-    # conn.commit()
-
-    # if cursor.rowcount > 0:
-    #     conn.close()
-    #     return f"Car rental {rental_id} successfully booked."
-    # else:
-    #     conn.close()
-    #     return f"No car rental found with ID {rental_id}."
-    return f"Car rental {rental_id} successfully booked."
-
-
-@tool
-def update_car_rental(
-    rental_id: int,
-    start_date: Optional[Union[datetime, date]] = None,
-    end_date: Optional[Union[datetime, date]] = None,
-) -> str:
-    """
-    Update a car rental's start and end dates by its ID.
-
-    Args:
-        rental_id (int): The ID of the car rental to update.
-        start_date (Optional[Union[datetime, date]]): The new start date of the car rental. Defaults to None.
-        end_date (Optional[Union[datetime, date]]): The new end date of the car rental. Defaults to None.
-
-    Returns:
-        str: A message indicating whether the car rental was successfully updated or not.
-    """
-    # conn = sqlite3.connect(db)
-    # cursor = conn.cursor()
-
-    # if start_date:
-    #     cursor.execute(
-    #         "UPDATE car_rentals SET start_date = ? WHERE id = ?",
-    #         (start_date, rental_id),
-    #     )
-    # if end_date:
-    #     cursor.execute(
-    #         "UPDATE car_rentals SET end_date = ? WHERE id = ?", (end_date, rental_id)
-    #     )
-
-    # conn.commit()
-
-    # if cursor.rowcount > 0:
-    #     conn.close()
-    #     return f"Car rental {rental_id} successfully updated."
-    # else:
-    #     conn.close()
-    #     return f"No car rental found with ID {rental_id}."
-    return f"Car rental {rental_id} successfully updated."
-
-
-@tool
-def cancel_car_rental(rental_id: int) -> str:
-    """
-    Cancel a car rental by its ID.
-
-    Args:
-        rental_id (int): The ID of the car rental to cancel.
-
-    Returns:
-        str: A message indicating whether the car rental was successfully cancelled or not.
-    """
-    # conn = sqlite3.connect(db)
-    # cursor = conn.cursor()
-
-    # cursor.execute("UPDATE car_rentals SET booked = 0 WHERE id = ?", (rental_id,))
-    # conn.commit()
-
-    # if cursor.rowcount > 0:
-    #     conn.close()
-    #     return f"Car rental {rental_id} successfully cancelled."
-    # else:
-    #     conn.close()
-    #     return f"No car rental found with ID {rental_id}."
-    return f"Car rental {rental_id} successfully cancelled."
-    
-@tool
-def search_hotels(
-    location: Optional[str] = None,
-    name: Optional[str] = None,
-    price_tier: Optional[str] = None,
-    checkin_date: Optional[Union[datetime, date]] = None,
-    checkout_date: Optional[Union[datetime, date]] = None,
-) -> list[dict]:
-    """
-    Search for hotels based on location, name, price tier, check-in date, and check-out date.
-
-    Args:
-        location (Optional[str]): The location of the hotel. Defaults to None.
-        name (Optional[str]): The name of the hotel. Defaults to None.
-        price_tier (Optional[str]): The price tier of the hotel. Defaults to None. Examples: Midscale, Upper Midscale, Upscale, Luxury
-        checkin_date (Optional[Union[datetime, date]]): The check-in date of the hotel. Defaults to None.
-        checkout_date (Optional[Union[datetime, date]]): The check-out date of the hotel. Defaults to None.
-
-    Returns:
-        list[dict]: A list of hotel dictionaries matching the search criteria.
-    """
-    # conn = sqlite3.connect(db)
-    # cursor = conn.cursor()
-
-    # query = "SELECT * FROM hotels WHERE 1=1"
-    # params = []
-
-    # if location:
-    #     query += " AND location LIKE ?"
-    #     params.append(f"%{location}%")
-    # if name:
-    #     query += " AND name LIKE ?"
-    #     params.append(f"%{name}%")
-    # # For the sake of this tutorial, we will let you match on any dates and price tier.
-    # cursor.execute(query, params)
-    # results = cursor.fetchall()
-
-    # conn.close()
-
-    # return [
-    #     dict(zip([column[0] for column in cursor.description], row)) for row in results
-    # ]
-    return [{}]
-
-
-@tool
-def book_hotel(hotel_id: int) -> str:
-    """
-    Book a hotel by its ID.
-
-    Args:
-        hotel_id (int): The ID of the hotel to book.
-
-    Returns:
-        str: A message indicating whether the hotel was successfully booked or not.
-    """
-    # conn = sqlite3.connect(db)
-    # cursor = conn.cursor()
-
-    # cursor.execute("UPDATE hotels SET booked = 1 WHERE id = ?", (hotel_id,))
-    # conn.commit()
-
-    # if cursor.rowcount > 0:
-    #     conn.close()
-    #     return f"Hotel {hotel_id} successfully booked."
-    # else:
-    #     conn.close()
-    #     return f"No hotel found with ID {hotel_id}."
-    return f"Hotel {hotel_id} successfully booked."
-
-
-@tool
-def update_hotel(
-    hotel_id: int,
-    checkin_date: Optional[Union[datetime, date]] = None,
-    checkout_date: Optional[Union[datetime, date]] = None,
-) -> str:
-    """
-    Update a hotel's check-in and check-out dates by its ID.
-
-    Args:
-        hotel_id (int): The ID of the hotel to update.
-        checkin_date (Optional[Union[datetime, date]]): The new check-in date of the hotel. Defaults to None.
-        checkout_date (Optional[Union[datetime, date]]): The new check-out date of the hotel. Defaults to None.
-
-    Returns:
-        str: A message indicating whether the hotel was successfully updated or not.
-    """
-    # conn = sqlite3.connect(db)
-    # cursor = conn.cursor()
-
-    # if checkin_date:
-    #     cursor.execute(
-    #         "UPDATE hotels SET checkin_date = ? WHERE id = ?", (checkin_date, hotel_id)
-    #     )
-    # if checkout_date:
-    #     cursor.execute(
-    #         "UPDATE hotels SET checkout_date = ? WHERE id = ?",
-    #         (checkout_date, hotel_id),
-    #     )
-
-    # conn.commit()
-
-    # if cursor.rowcount > 0:
-    #     conn.close()
-    #     return f"Hotel {hotel_id} successfully updated."
-    # else:
-    #     conn.close()
-    #     return f"No hotel found with ID {hotel_id}."
-    return f"Hotel {hotel_id} successfully updated."
-
-
-@tool
-def cancel_hotel(hotel_id: int) -> str:
-    """
-    Cancel a hotel by its ID.
-
-    Args:
-        hotel_id (int): The ID of the hotel to cancel.
-
-    Returns:
-        str: A message indicating whether the hotel was successfully cancelled or not.
-    """
-    # conn = sqlite3.connect(db)
-    # cursor = conn.cursor()
-
-    # cursor.execute("UPDATE hotels SET booked = 0 WHERE id = ?", (hotel_id,))
-    # conn.commit()
-
-    # if cursor.rowcount > 0:
-    #     conn.close()
-    #     return f"Hotel {hotel_id} successfully cancelled."
-    # else:
-    #     conn.close()
-    #     return f"No hotel found with ID {hotel_id}."\
-    return f"Hotel {hotel_id} successfully cancelled."
-    
-
-
-@tool
-def search_trip_recommendations(
-    location: Optional[str] = None,
-    name: Optional[str] = None,
-    keywords: Optional[str] = None,
-) -> list[dict]:
-    """
-    Search for trip recommendations based on location, name, and keywords.
-
-    Args:
-        location (Optional[str]): The location of the trip recommendation. Defaults to None.
-        name (Optional[str]): The name of the trip recommendation. Defaults to None.
-        keywords (Optional[str]): The keywords associated with the trip recommendation. Defaults to None.
-
-    Returns:
-        list[dict]: A list of trip recommendation dictionaries matching the search criteria.
-    """
-    # conn = sqlite3.connect(db)
-    # cursor = conn.cursor()
-
-    # query = "SELECT * FROM trip_recommendations WHERE 1=1"
-    # params = []
-
-    # if location:
-    #     query += " AND location LIKE ?"
-    #     params.append(f"%{location}%")
-    # if name:
-    #     query += " AND name LIKE ?"
-    #     params.append(f"%{name}%")
-    # if keywords:
-    #     keyword_list = keywords.split(",")
-    #     keyword_conditions = " OR ".join(["keywords LIKE ?" for _ in keyword_list])
-    #     query += f" AND ({keyword_conditions})"
-    #     params.extend([f"%{keyword.strip()}%" for keyword in keyword_list])
-
-    # cursor.execute(query, params)
-    # results = cursor.fetchall()
-
-    # conn.close()
-
-    # return [
-    #     dict(zip([column[0] for column in cursor.description], row)) for row in results
-    # ]
-    return [{}]
-
-
-@tool
-def book_excursion(recommendation_id: int) -> str:
-    """
-    Book a excursion by its recommendation ID.
-
-    Args:
-        recommendation_id (int): The ID of the trip recommendation to book.
-
-    Returns:
-        str: A message indicating whether the trip recommendation was successfully booked or not.
-    """
-    # conn = sqlite3.connect(db)
-    # cursor = conn.cursor()
-
-    # cursor.execute(
-    #     "UPDATE trip_recommendations SET booked = 1 WHERE id = ?", (recommendation_id,)
-    # )
-    # conn.commit()
-
-    # if cursor.rowcount > 0:
-    #     conn.close()
-    #     return f"Trip recommendation {recommendation_id} successfully booked."
-    # else:
-    #     conn.close()
-    #     return f"No trip recommendation found with ID {recommendation_id}."
-    return f"Trip recommendation {recommendation_id} successfully booked."
-
-
-@tool
-def update_excursion(recommendation_id: int, details: str) -> str:
-    """
-    Update a trip recommendation's details by its ID.
-
-    Args:
-        recommendation_id (int): The ID of the trip recommendation to update.
-        details (str): The new details of the trip recommendation.
-
-    Returns:
-        str: A message indicating whether the trip recommendation was successfully updated or not.
-    """
-    # conn = sqlite3.connect(db)
-    # cursor = conn.cursor()
-
-    # cursor.execute(
-    #     "UPDATE trip_recommendations SET details = ? WHERE id = ?",
-    #     (details, recommendation_id),
-    # )
-    # conn.commit()
-
-    # if cursor.rowcount > 0:
-    #     conn.close()
-    #     return f"Trip recommendation {recommendation_id} successfully updated."
-    # else:
-    #     conn.close()
-    #     return f"No trip recommendation found with ID {recommendation_id}."
-    return f"Trip recommendation {recommendation_id} successfully updated."
-
-
-@tool
-def cancel_excursion(recommendation_id: int) -> str:
-    """
-    Cancel a trip recommendation by its ID.
-
-    Args:
-        recommendation_id (int): The ID of the trip recommendation to cancel.
-
-    Returns:
-        str: A message indicating whether the trip recommendation was successfully cancelled or not.
-    """
-    # conn = sqlite3.connect(db)
-    # cursor = conn.cursor()
-
-    # cursor.execute(
-    #     "UPDATE trip_recommendations SET booked = 0 WHERE id = ?", (recommendation_id,)
-    # )
-    # conn.commit()
-
-    # if cursor.rowcount > 0:
-    #     conn.close()
-    #     return f"Trip recommendation {recommendation_id} successfully cancelled."
-    # else:
-    #     conn.close()
-    #     return f"No trip recommendation found with ID {recommendation_id}."
-    return f"Trip recommendation {recommendation_id} successfully cancelled."
     
 
 from langchain_core.messages import ToolMessage
@@ -788,28 +230,18 @@ def _print_event(event: dict, _printed: set, max_length=1500):
 # "Read"-only tools (such as retrievers) don't need a user confirmation to use
 part_3_safe_tools = [
     TavilySearchResults(max_results=1),
-    fetch_user_flight_information,
-    search_flights,
-    lookup_policy,
-    search_car_rentals,
-    search_hotels,
-    search_trip_recommendations,
+    dealership_by_name,
+    dealership_locator,
+    check_rv_inventory_by_dealership,
+    check_rv_inventory_by_zipcode,
 ]
 
 # These tools all change the user's reservations.
 # The user has the right to control what decisions are made
 part_3_sensitive_tools = [
-    update_ticket_to_new_flight,
-    cancel_ticket,
-    book_car_rental,
-    update_car_rental,
-    cancel_car_rental,
-    book_hotel,
-    update_hotel,
-    cancel_hotel,
-    book_excursion,
-    update_excursion,
-    cancel_excursion,
+    send_contanct_info,
+    schedule_visit_by_inventory,
+    schedule_visit_by_location,
 ]
 sensitive_tool_names = {t.name for t in part_3_sensitive_tools}
 
@@ -907,193 +339,266 @@ class CompleteOrEscalate(BaseModel):
         }
 
 
-# Flight booking assistant
+# Sales Assistant
 
-flight_booking_prompt = ChatPromptTemplate.from_messages(
+sales_assistant_prompt = ChatPromptTemplate.from_messages(
     [
         (
             "system",
-            "You are a specialized assistant for handling flight updates. "
-            " The primary assistant delegates work to you whenever the user needs help updating their bookings. "
-            "Confirm the updated flight details with the customer and inform them of any additional fees. "
-            " When searching, be persistent. Expand your query bounds if the first search returns no results. "
-            "If you need more information or the customer changes their mind, escalate the task back to the main assistant."
-            " Remember that a booking isn't completed until after the relevant tool has successfully been used."
-            "\n\nCurrent user flight information:\n\n{user_info}\n"
-            "\nCurrent time: {time}."
-            "\n\nIf the user needs help, and none of your tools are appropriate for it, then"
-            ' "CompleteOrEscalate" the dialog to the host assistant. Do not waste the user\'s time. Do not make up invalid tools or functions.',
+            """
+            You are an RV salesman interacting with a potential customer browsing RVs on the website https://www.campersinn.com. Your primary objective is to persuade the customer to schedule an appointment at their nearest Camper's Inn dealership. It is important to refrain from pushing them too hard or asking too soon for the visit. It is also important that you ONLY discuss RVs and RV life.
+
+            In determining how to respond to the customer's most recent input, you will think step-by-step.
+
+            ### STEP 1
+            #### Determine if the customer needs help choosing the best RV for their needs, or if they already know what they are looking for.
+            IF they need help choosing the best RV for their needs, proceed to STEP 2 (Stages 1 & 2).
+            IF they already know the exact RV model they are looking for OR you have helped them narrow their search to a specific RV model, proceed to STEP 2 (Stages 3 & 4).
+
+            ### STEP 2
+            #### Understand what stage the customer is at in the sales cycle AND continue the conversation from there.
+            ##### Stage 1: Building Rapport and Understanding Needs.
+            Start by greeting the customer and establishing a friendly tone. Ask the customer if they currently own one. If they own an RV, proceed to gather specifics about their current RV model. If they don’t own an RV, inquire about any past RVing experiences. Then, ONLY IF you do not know what class of RV the customer wants, ask if they prefer to tow or drive the RV. Understand how the customer plans to use the RV, such as the frequency of use and types of trips. Gather information about travel companions (e.g. family, friends, or pets) to understand space, amenities needed, and how many people the RV needs to sleep. Finally, determine the class of RV that fits their needs and any towing requirements. REFRAIN from asking any questions to which you already have answers or information. Refer to information the customer has already provided for confirmation.
+            ##### Stage 2: Identifying Key Features.
+            Identify the specific features and preferences the customer has for their RV. This may include how many bunks they want, and what size bed they prefer. It may also include if they want to have any slideouts and, if so, how many. You may consider asking the customer what length of RV they want, considering that shorter RVs are easier to maneuver while longer RVs have more living and storage space. Determine kitchen and bathroom feature preferences by asking what kitchen features they want, such as an island, oven, microwave, TV, stovetop, etc., and what bathroom features they want, like a wet bath, dry bath, separate shower, front bathroom, or rear bathroom. Additionally, you may ask if they want a washer/dryer and if they need other technology like solar or internet. REFRAIN from asking any questions to which you already have answers or information. Refer to information the customer has already provided for confirmation.
+            ##### Stage 3: Discussing a Specific RV Model.
+            Confirm their selection of RV model. Hand the conversation off to the **INVENTORY ASSISTANT** in order to show them specific inventory units, including URL links, the location of the RV, and all pricing information about the RV. 
+            ##### Stage 4: Addressing Budget and Scheduling a Visit.
+            Inquire about any trade-in plans by asking if they will be trading in an RV and, if so, hand the conversation off to the **TRADE-IN ASSISTANT**. Otherwise, hand the conversation off to the **SCHEDULING ASSISTANT** to ensure the visit gets scheduled.
+
+            ### STEP 3
+            #### Determine if any TOOLS are needed to best respond to the customer.
+            You have access to the following tools:
+            - dealership_by_name: Use this tool to lookup dealership information by the name of the dealership. The name of the dealership is often the name of the city the dealership is located in.
+
+            - dealership_locator: Use this tool to identify the Camper's Inn RV dealership closest to them. Before using the dealership_locator tool, ask them for their zip code (provided you do not already know their zip code). UNLESS the customer specifically asks to schedule visit, you MUST have identified a specific unit of inventory before suggesting they schedule a visit.
+
+            - send_contact_info: Use this tool IMMEDIATELY in ANY of the following situations: 1. When the customer asks to speak to a human or representative. 2. If the customer does NOT schedule a visit, but wants someone to follow up with them. 3. When the customer requests information that requires dealership follow-up (e.g., video walkthroughs, personalized quotes, scheduling visits). 4. When the customer asks about pricing, payments, or financing. 5. When the customer indicates in any way they want someone to contact them or provide additional information. 6. Any time you say you need to check with an RV matchmaker. Do NOT wait for the customer to explicitly ask to be contacted. If you have their contact information, use the tool proactively. Before using the send_contact_info tool, ensure you have the customer's name AND (phone number OR email address). If you're missing any of this information, ask for it politely. After using this tool, inform the customer that a dealership representative will be in touch soon to provide more detailed information or assistance. Remember: It's better to use this tool too often than not enough. When in doubt, use it.
+
+            ### STEP 4
+            #### Consider the context below before crafting your response to the customer.
+            Today is Friday.
+
+            Be sure to end your response with a single, relevant question to keep the conversation going.
+            """,
         ),
         ("placeholder", "{messages}"),
     ]
 ).partial(time=datetime.now())
 
-llm = ChatAnthropic(model="claude-3-sonnet-20240229", temperature=1)
-
-update_flight_safe_tools = [search_flights]
-update_flight_sensitive_tools = [update_ticket_to_new_flight, cancel_ticket]
-update_flight_tools = update_flight_safe_tools + update_flight_sensitive_tools
-update_flight_runnable = flight_booking_prompt | llm.bind_tools(
-    update_flight_tools + [CompleteOrEscalate]
+llm = ChatAnthropic(model="claude-3-5-sonnet-20240620", temperature=1)
+# dealership_by_name, dealership_locator, send_contanct_info
+sales_safe_tools = [dealership_by_name, dealership_locator]
+sales_sensitive_tools = [send_contanct_info]
+sales_tools = sales_safe_tools + sales_sensitive_tools
+sales_runnable = sales_assistant_prompt | llm.bind_tools(
+    sales_tools + [CompleteOrEscalate]
 )
 
-# Hotel Booking Assistant
-book_hotel_prompt = ChatPromptTemplate.from_messages(
+# Inventory Assistant
+inventory_assistant_prompt = ChatPromptTemplate.from_messages(
     [
         (
             "system",
-            "You are a specialized assistant for handling hotel bookings. "
-            "The primary assistant delegates work to you whenever the user needs help booking a hotel. "
-            "Search for available hotels based on the user's preferences and confirm the booking details with the customer. "
-            " When searching, be persistent. Expand your query bounds if the first search returns no results. "
-            "If you need more information or the customer changes their mind, escalate the task back to the main assistant."
-            " Remember that a booking isn't completed until after the relevant tool has successfully been used."
-            "\nCurrent time: {time}."
-            '\n\nIf the user needs help, and none of your tools are appropriate for it, then "CompleteOrEscalate" the dialog to the host assistant.'
-            " Do not waste the user's time. Do not make up invalid tools or functions."
-            "\n\nSome examples for which you should CompleteOrEscalate:\n"
-            " - 'what's the weather like this time of year?'\n"
-            " - 'nevermind i think I'll book separately'\n"
-            " - 'i need to figure out transportation while i'm there'\n"
-            " - 'Oh wait i haven't booked my flight yet i'll do that first'\n"
-            " - 'Hotel booking confirmed'",
+            """
+            You are an RV inventory assistant interacting with a potential customer browsing RVs on the website https://www.campersinn.com. Your task is to use the provided tools to find RV units based on the customer's preferences.
+
+            Here are your instructions:
+
+            ## Search Parameter Limitations:
+            You can only search inventory by:
+            - manufacturer
+            - make
+            - model
+            - year
+            - class type
+            - budget
+            - stock number
+            - new or used
+            - sleep capacity
+
+            You can NOT search inventory by:
+            - RV weight
+            - bathroom/kitchen features
+            - etc.
+
+            If the customer tries to search by any other parameter, apologize and explain that you cannot search by that parameter. Suggest parameters you are able to search by instead. For example: if a customer tries to search by RV weight, say "I'm sorry, I cannot search by [search_parameter]. However, I can search by [all_valid_search_parameters]!"
+
+            ## Available Tools:
+            You have access to two inventory search tools:
+            1. check_rv_inventory_by_dealership
+            2. check_rv_inventory_by_zipcode
+
+            ### Instructions for using check_rv_inventory_by_dealership:
+            - Before using this tool, ensure the customer has mentioned a specific dealership name.
+            - The name of the dealership is often the name of the city the dealership is located in.
+            - Be sure to check the <KNOWLEDGE> section to see if you already know what dealership to search inventory at.
+            - If no dealership is mentioned, ask for their zip code and use check_rv_inventory_by_zipcode instead.
+            - Use this tool to find specific inventory units of the RV model the customer is interested in.
+            - In your response, always include: URL, RV unit's location, and price information (even if the price is not listed).
+            - If searching for an RV class, put the class in the `classType` field, not in the query field.
+            - If the customer specifies new or used, populate the `isNew` field.
+
+            ### Instructions for using check_rv_inventory_by_zipcode:
+            - Before using this tool, ensure the customer has provided their zip code.
+            - Be sure to check the <KNOWLEDGE> section to see if you already know the customer's zip code.
+            - If you don't have the zip code, ask the customer for it.
+            - Use this tool to find specific inventory units of the RV model the customer is interested in.
+            - In your response, always include: URL, RV unit's location, and price information (even if the price is not listed).
+            - If searching for an RV class, put the class in the `classType` field, not in the query field.
+            - If the customer specifies new or used, populate the `isNew` field.
+
+            ## Possible RV Class Types:
+            When populating the classType field, use one of the following (you can also use partial matches like "Class A" or "Super C"):
+
+            A-Frames, Expandable, Fish House, Fifth Wheel, Truck Camper, Cargo Trailer, Travel Trailer, Teardrop Trailer, Motor Home Class A, Motor Home Class B, Motor Home Class C, Destination Trailer, Motor Home Class B+, Folding Pop-Up Camper, Toy Hauler Fifth Wheel, Toy Hauler Travel Trailer, Motor Home Class A - Diesel, Motor Home Class B - Diesel, Motor Home Class C - Diesel, Motor Home Super C - Diesel, Motor Home Class B+ - Diesel, Motor Home Class A - Toy Hauler, Motor Home Class C - Toy hauler, Motor Home Class A - Diesel - Toy Hauler
+
+            ## Other Searchable Fields:
+            - query: Make, manufacturer, and/or model of the RV
+            - isNew: Used (false), new (true), or no preference (null)
+            - stockNumber: Stock number of the item (e.g., #90724, 90417R, 87491RB)
+            - dealershipName: Name of the dealership for inventory search
+            - classType: Class of RV (e.g., Class A, Class B, Class C, Fifth Wheel, Pop-Up Camper, Travel Trailer)
+            - budget: Customer's budget
+            - zipCode: Customer's zip code
+            - sleeps: RV sleeping capacity (this must be a number)
+
+            ## Outputting Search Results:
+            - Each tool will return multiple exact matches and multiple alternative RV matches.
+            - Make sure you present every single RV unit provided by the tool to the customer.
+            - Do not selectively choose which results to display.
+
+            Analyze the query to determine which tool to use and what information to include in the search. Once you have the information, use the appropriate tool to search for RV inventory and present the results to the customer. Remember to include all relevant details such as URL, location, and price information for each RV unit found.
+
+            Your response MUST end with a relevant question to keep the conversation going and help the customer find an RV they want to see in person. Your ultimate goal is to persuade the customer to schedule a visit at a dealership.
+            """
         ),
         ("placeholder", "{messages}"),
     ]
 ).partial(time=datetime.now())
 
-book_hotel_safe_tools = [search_hotels]
-book_hotel_sensitive_tools = [book_hotel, update_hotel, cancel_hotel]
-book_hotel_tools = book_hotel_safe_tools + book_hotel_sensitive_tools
-book_hotel_runnable = book_hotel_prompt | llm.bind_tools(
-    book_hotel_tools + [CompleteOrEscalate]
+# check_rv_inventory_by_dealership, check_rv_inventory_by_zipcode
+inventory_assistant_safe_tools = [check_rv_inventory_by_dealership, check_rv_inventory_by_zipcode]
+inventory_assistant_sensitive_tools = []
+inventory_assistant_tools = inventory_assistant_safe_tools + inventory_assistant_sensitive_tools
+inventory_assistant_runnable = inventory_assistant_prompt | llm.bind_tools(
+    inventory_assistant_tools + [CompleteOrEscalate]
 )
 
-# Car Rental Assistant
-book_car_rental_prompt = ChatPromptTemplate.from_messages(
+# Scheduling Assistant
+scheduling_assistant_prompt = ChatPromptTemplate.from_messages(
     [
         (
             "system",
-            "You are a specialized assistant for handling car rental bookings. "
-            "The primary assistant delegates work to you whenever the user needs help booking a car rental. "
-            "Search for available car rentals based on the user's preferences and confirm the booking details with the customer. "
-            " When searching, be persistent. Expand your query bounds if the first search returns no results. "
-            "If you need more information or the customer changes their mind, escalate the task back to the main assistant."
-            " Remember that a booking isn't completed until after the relevant tool has successfully been used."
-            "\nCurrent time: {time}."
-            "\n\nIf the user needs help, and none of your tools are appropriate for it, then "
-            '"CompleteOrEscalate" the dialog to the host assistant. Do not waste the user\'s time. Do not make up invalid tools or functions.'
-            "\n\nSome examples for which you should CompleteOrEscalate:\n"
-            " - 'what's the weather like this time of year?'\n"
-            " - 'What flights are available?'\n"
-            " - 'nevermind i think I'll book separately'\n"
-            " - 'Oh wait i haven't booked my flight yet i'll do that first'\n"
-            " - 'Car rental booking confirmed'",
+            """
+            You are an RV scheduling assistant interacting with a potential customer on the website https://www.campersinn.com who wants to schedule a dealership visit. Your task is to gather the customer's information and schedule their appointment.
+
+            Here are your instructions:
+
+            Carefully analyze the customer's input to determine if they are asking about a specific RV unit or model. 
+
+            ### Scheduling a visit based on an inventory item.
+            If the customer mentions being interested in a specific RV unit, that unit's details will be provided in the chat history.
+            If an inventory item is provided, ask the customer to confirm they want to schedule a visit to see that specific unit. Get the URL of the RV unit they want to see.
+            Then politely ask the customer for the following information to schedule their visit:
+            - Their full name 
+            - Their phone number OR email address (let them choose which to provide)
+            - Their preferred date to visit
+            - Their preferred time to visit
+
+            IMPORTANT: ALWAYS ask the customer to confirm the details of the visit before using the schedule_visit_by_inventory tool.
+            Once they have confirmed the URL of the RV unit, their name, their phone number or email address, and their preferred date and time to visit, call the schedule_visit_by_inventory tool.
+
+            ### Scheduling a visit based on the customer's zip code.
+            If the user did NOT mention a specific RV unit, or if no inventory details were provided, ask for their zip code so you can find the closest Camper's Inn RV dealership to them. 
+            Then politely ask the customer for the following information to schedule their visit:
+            - Their full name
+            - Their phone number OR email address (let them choose which to provide) 
+            - Their preferred date to visit
+            - Their preferred time to visit
+
+            IMPORTANT: ALWAYS ask the customer to confirm the details of the visit before using the schedule_visit_by_location tool.
+            Once they have confirmed the dealership location, their name, phone number or email address, and preferred date and time to visit, call the schedule_visit_by_location tool.
+            Remember, you MUST have the customer's name AND either their phone number or email address before scheduling a visit. You also MUST have either the specific RV unit URL they want to see OR their zip code to find the closest dealership before scheduling. 
+
+            NEVER call either scheduling tool unless you have all the required information as described above. Politely ask the customer for any missing information you need.
+            Analyze each new user message carefully and engage in back-and-forth dialog as needed to gather all the necessary information before attempting to schedule a visit.
+
+            IMPORTANT: REFRAIN from scheduling any visits before Friday July 30th, 2024.
+            Today is July 30th, 2024.
+
+            After you have successfully scheduled the appointment, ask the customer if there is anything else you can help them with.
+            """
         ),
         ("placeholder", "{messages}"),
     ]
 ).partial(time=datetime.now())
-
-book_car_rental_safe_tools = [search_car_rentals]
-book_car_rental_sensitive_tools = [
-    book_car_rental,
-    update_car_rental,
-    cancel_car_rental,
+# schedule_visit_by_inventory, schedule_visit_by_location
+scheduling_assistant_safe_tools = []
+scheduling_assistant_sensitive_tools = [
+    schedule_visit_by_inventory,
+    schedule_visit_by_location,
 ]
-book_car_rental_tools = book_car_rental_safe_tools + book_car_rental_sensitive_tools
-book_car_rental_runnable = book_car_rental_prompt | llm.bind_tools(
-    book_car_rental_tools + [CompleteOrEscalate]
+scheduling_assistant_tools = scheduling_assistant_safe_tools + scheduling_assistant_sensitive_tools
+scheduling_assistant_runnable = scheduling_assistant_prompt | llm.bind_tools(
+    scheduling_assistant_tools + [CompleteOrEscalate]
 )
 
-# Excursion Assistant
-
-book_excursion_prompt = ChatPromptTemplate.from_messages(
+# Trade-In Assistant
+trade_in_prompt = ChatPromptTemplate.from_messages(
     [
         (
             "system",
-            "You are a specialized assistant for handling trip recommendations. "
-            "The primary assistant delegates work to you whenever the user needs help booking a recommended trip. "
-            "Search for available trip recommendations based on the user's preferences and confirm the booking details with the customer. "
-            "If you need more information or the customer changes their mind, escalate the task back to the main assistant."
-            " When searching, be persistent. Expand your query bounds if the first search returns no results. "
-            " Remember that a booking isn't completed until after the relevant tool has successfully been used."
-            "\nCurrent time: {time}."
-            '\n\nIf the user needs help, and none of your tools are appropriate for it, then "CompleteOrEscalate" the dialog to the host assistant. Do not waste the user\'s time. Do not make up invalid tools or functions.'
-            "\n\nSome examples for which you should CompleteOrEscalate:\n"
-            " - 'nevermind i think I'll book separately'\n"
-            " - 'i need to figure out transportation while i'm there'\n"
-            " - 'Oh wait i haven't booked my flight yet i'll do that first'\n"
-            " - 'Excursion booking confirmed!'",
+            """
+            Your objective is to gather all relevant information about the vehicle the User is looking to trade-in as described in the PROFILE.
+            <PROFILE>
+            1. What model does the user own?
+            2. What year is it?
+            3. What is the current condition of it?
+            4. What RV are they looking to trade it in for?
+            </PROFILE>
+            You will refrain from asking about Question 2 until you have the answer to Question 1. You will refrain from asking about Question 3 until you have the answer to Question 2. You will refrain from asking about Question 4 until you have the answer to Questions 1, 2, and 3.
+            """
         ),
         ("placeholder", "{messages}"),
     ]
 ).partial(time=datetime.now())
 
-book_excursion_safe_tools = [search_trip_recommendations]
-book_excursion_sensitive_tools = [book_excursion, update_excursion, cancel_excursion]
-book_excursion_tools = book_excursion_safe_tools + book_excursion_sensitive_tools
-book_excursion_runnable = book_excursion_prompt | llm.bind_tools(
-    book_excursion_tools + [CompleteOrEscalate]
+trade_in_safe_tools = []
+trade_in_sensitive_tools = []
+trade_in_tools = trade_in_safe_tools + trade_in_sensitive_tools
+trade_in_runnable = trade_in_prompt | llm.bind_tools(
+    trade_in_tools + [CompleteOrEscalate]
 )
 
 
 # Primary Assistant
-class ToFlightBookingAssistant(BaseModel):
-    """Transfers work to a specialized assistant to handle flight updates and cancellations."""
+class ToSalesAssistant(BaseModel):
+    """Transfers work to a specialized assistant to handle sales."""
 
-    request: str = Field(
-        description="Any necessary followup questions the update flight assistant should clarify before proceeding."
+    reason: str = Field(
+        description="The reason for transferring the user to the sales assistant."
     )
 
 
-class ToBookCarRental(BaseModel):
-    """Transfers work to a specialized assistant to handle car rental bookings."""
+class ToInventoryAssistant(BaseModel):
+    """Transfers work to a specialized assistant to handle checking inventory."""
 
-    location: str = Field(
-        description="The location where the user wants to rent a car."
-    )
-    start_date: str = Field(description="The start date of the car rental.")
-    end_date: str = Field(description="The end date of the car rental.")
-    request: str = Field(
-        description="Any additional information or requests from the user regarding the car rental."
+    reason: str = Field(
+        description="The reason for transferring the user to the inventory assistant."
     )
 
-    class Config:
-        schema_extra = {
-            "example": {
-                "location": "Basel",
-                "start_date": "2023-07-01",
-                "end_date": "2023-07-05",
-                "request": "I need a compact car with automatic transmission.",
-            }
-        }
 
+class ToSchedulingAssistant(BaseModel):
+    """Transfer work to a specialized assistant to handle scheduling."""
 
-class ToHotelBookingAssistant(BaseModel):
-    """Transfer work to a specialized assistant to handle hotel bookings."""
-
-    location: str = Field(
-        description="The location where the user wants to book a hotel."
-    )
-    checkin_date: str = Field(description="The check-in date for the hotel.")
-    checkout_date: str = Field(description="The check-out date for the hotel.")
-    request: str = Field(
-        description="Any additional information or requests from the user regarding the hotel booking."
+    reason: str = Field(
+        description="The reason for transferring the user to the scheduling assistant."
     )
 
-    class Config:
-        schema_extra = {
-            "example": {
-                "location": "Zurich",
-                "checkin_date": "2023-08-15",
-                "checkout_date": "2023-08-20",
-                "request": "I prefer a hotel near the city center with a room that has a view.",
-            }
-        }
 
-
-class ToBookExcursion(BaseModel):
-    """Transfers work to a specialized assistant to handle trip recommendation and other excursion bookings."""
+class ToTradeIn(BaseModel):
+    """Transfers work to a specialized assistant to handle trade-in information."""
 
     location: str = Field(
         description="The location where the user wants to book a recommended trip."
@@ -1120,33 +625,30 @@ primary_assistant_prompt = ChatPromptTemplate.from_messages(
     [
         (
             "system",
-            "You are a helpful customer support assistant for Swiss Airlines. "
-            "Your primary role is to search for flight information and company policies to answer customer queries. "
-            "If a customer requests to update or cancel a flight, book a car rental, book a hotel, or get trip recommendations, "
+            "You are a helpful customer support assistant for Camper's Inn RV, named Fran. "
+            "Your primary role is to answer a customer's questions about RVs and persuade the customer to schedule a visit at a dealership. "
+            "If a customer has questions about the dealership, wants to browse RVs, search inventory for a specific RV, schedule a visit at a dealership, or discuss an RV they want to trade-in, "
             "delegate the task to the appropriate specialized assistant by invoking the corresponding tool. You are not able to make these types of changes yourself."
             " Only the specialized assistants are given permission to do this for the user."
             "The user is not aware of the different specialized assistants, so do not mention them; just quietly delegate through function calls. "
             "Provide detailed information to the customer, and always double-check the database before concluding that information is unavailable. "
             " When searching, be persistent. Expand your query bounds if the first search returns no results. "
             " If a search comes up empty, expand your search before giving up."
-            "\n\nCurrent user flight information:\n\n{user_info}\n"
-            "\nCurrent time: {time}.",
+            "\n\nCurrent user flight information:\n",
         ),
         ("placeholder", "{messages}"),
     ]
 ).partial(time=datetime.now())
 primary_assistant_tools = [
     TavilySearchResults(max_results=1),
-    search_flights,
-    lookup_policy,
 ]
 assistant_runnable = primary_assistant_prompt | llm.bind_tools(
     primary_assistant_tools
     + [
-        ToFlightBookingAssistant,
-        ToBookCarRental,
-        ToHotelBookingAssistant,
-        ToBookExcursion,
+        ToSalesAssistant,
+        # ToInventoryAssistant,
+        # ToSchedulingAssistant,
+        # ToTradeIn,
     ]
 )
 
@@ -1164,7 +666,7 @@ def create_entry_node(assistant_name: str, new_dialog_state: str) -> Callable:
                 ToolMessage(
                     content=f"The assistant is now the {assistant_name}. Reflect on the above conversation between the host assistant and the user."
                     f" The user's intent is unsatisfied. Use the provided tools to assist the user. Remember, you are {assistant_name},"
-                    " and the booking, update, other other action is not complete until after you have successfully invoked the appropriate tool."
+                    " and the action is not complete until after you have successfully invoked the appropriate tool."
                     " If the user changes their mind or needs help for other tasks, call the CompleteOrEscalate function to let the primary host assistant take control."
                     " Do not mention who you are - just act as the proxy for the assistant.",
                     tool_call_id=tool_call_id,
@@ -1186,35 +688,35 @@ builder = StateGraph(State)
 
 
 def user_info(state: State):
-    return {"user_info": fetch_user_flight_information.invoke({})}
+    return {"user_info": "User name is John."}
 
 
 builder.add_node("fetch_user_info", user_info)
 builder.add_edge(START, "fetch_user_info")
 
 ######################################################################################################
-# Flight booking assistant
+# Sales assistant
 builder.add_node(
-    "enter_update_flight",
-    create_entry_node("Flight Updates & Booking Assistant", "update_flight"),
+    "enter_sales_assistant",
+    create_entry_node("Sales Assistant", "sales_assistant"),
 )
-builder.add_node("update_flight", Assistant(update_flight_runnable))
-builder.add_edge("enter_update_flight", "update_flight")
+builder.add_node("sales_assistant", Assistant(sales_runnable))
+builder.add_edge("enter_sales_assistant", "sales_assistant")
 builder.add_node(
-    "update_flight_sensitive_tools",
-    create_tool_node_with_fallback(update_flight_sensitive_tools),
+    "sales_sensitive_tools",
+    create_tool_node_with_fallback(sales_sensitive_tools),
 )
 builder.add_node(
-    "update_flight_safe_tools",
-    create_tool_node_with_fallback(update_flight_safe_tools),
+    "sales_safe_tools",
+    create_tool_node_with_fallback(sales_safe_tools),
 )
 
 
-def route_update_flight(
+def route_sales_assistant(
     state: State,
 ) -> Literal[
-    "update_flight_sensitive_tools",
-    "update_flight_safe_tools",
+    "sales_sensitive_tools",
+    "sales_safe_tools",
     "leave_skill",
     "__end__",
 ]:
@@ -1225,15 +727,15 @@ def route_update_flight(
     did_cancel = any(tc["name"] == CompleteOrEscalate.__name__ for tc in tool_calls)
     if did_cancel:
         return "leave_skill"
-    safe_toolnames = [t.name for t in update_flight_safe_tools]
+    safe_toolnames = [t.name for t in sales_safe_tools]
     if all(tc["name"] in safe_toolnames for tc in tool_calls):
-        return "update_flight_safe_tools"
-    return "update_flight_sensitive_tools"
+        return "sales_safe_tools"
+    return "sales_sensitive_tools"
 
 
-builder.add_edge("update_flight_sensitive_tools", "update_flight")
-builder.add_edge("update_flight_safe_tools", "update_flight")
-builder.add_conditional_edges("update_flight", route_update_flight)
+builder.add_edge("sales_sensitive_tools", "sales_assistant")
+builder.add_edge("sales_safe_tools", "sales_assistant")
+builder.add_conditional_edges("sales_assistant", route_sales_assistant)
 
 
 # This node will be shared for exiting all specialized assistants
@@ -1264,128 +766,128 @@ builder.add_edge("leave_skill", "primary_assistant")
 ######################################################################################################
 # Car rental assistant
 
-builder.add_node(
-    "enter_book_car_rental",
-    create_entry_node("Car Rental Assistant", "book_car_rental"),
-)
-builder.add_node("book_car_rental", Assistant(book_car_rental_runnable))
-builder.add_edge("enter_book_car_rental", "book_car_rental")
-builder.add_node(
-    "book_car_rental_safe_tools",
-    create_tool_node_with_fallback(book_car_rental_safe_tools),
-)
-builder.add_node(
-    "book_car_rental_sensitive_tools",
-    create_tool_node_with_fallback(book_car_rental_sensitive_tools),
-)
+# builder.add_node(
+#     "enter_book_car_rental",
+#     create_entry_node("Car Rental Assistant", "book_car_rental"),
+# )
+# builder.add_node("book_car_rental", Assistant(book_car_rental_runnable))
+# builder.add_edge("enter_book_car_rental", "book_car_rental")
+# builder.add_node(
+#     "book_car_rental_safe_tools",
+#     create_tool_node_with_fallback(book_car_rental_safe_tools),
+# )
+# builder.add_node(
+#     "book_car_rental_sensitive_tools",
+#     create_tool_node_with_fallback(book_car_rental_sensitive_tools),
+# )
 
 
-def route_book_car_rental(
-    state: State,
-) -> Literal[
-    "book_car_rental_safe_tools",
-    "book_car_rental_sensitive_tools",
-    "leave_skill",
-    "__end__",
-]:
-    route = tools_condition(state)
-    if route == END:
-        return END
-    tool_calls = state["messages"][-1].tool_calls
-    did_cancel = any(tc["name"] == CompleteOrEscalate.__name__ for tc in tool_calls)
-    if did_cancel:
-        return "leave_skill"
-    safe_toolnames = [t.name for t in book_car_rental_safe_tools]
-    if all(tc["name"] in safe_toolnames for tc in tool_calls):
-        return "book_car_rental_safe_tools"
-    return "book_car_rental_sensitive_tools"
+# def route_book_car_rental(
+#     state: State,
+# ) -> Literal[
+#     "book_car_rental_safe_tools",
+#     "book_car_rental_sensitive_tools",
+#     "leave_skill",
+#     "__end__",
+# ]:
+#     route = tools_condition(state)
+#     if route == END:
+#         return END
+#     tool_calls = state["messages"][-1].tool_calls
+#     did_cancel = any(tc["name"] == CompleteOrEscalate.__name__ for tc in tool_calls)
+#     if did_cancel:
+#         return "leave_skill"
+#     safe_toolnames = [t.name for t in book_car_rental_safe_tools]
+#     if all(tc["name"] in safe_toolnames for tc in tool_calls):
+#         return "book_car_rental_safe_tools"
+#     return "book_car_rental_sensitive_tools"
 
 
-builder.add_edge("book_car_rental_sensitive_tools", "book_car_rental")
-builder.add_edge("book_car_rental_safe_tools", "book_car_rental")
-builder.add_conditional_edges("book_car_rental", route_book_car_rental)
+# builder.add_edge("book_car_rental_sensitive_tools", "book_car_rental")
+# builder.add_edge("book_car_rental_safe_tools", "book_car_rental")
+# builder.add_conditional_edges("book_car_rental", route_book_car_rental)
 
-######################################################################################################
-# Hotel booking assistant
-builder.add_node(
-    "enter_book_hotel", create_entry_node("Hotel Booking Assistant", "book_hotel")
-)
-builder.add_node("book_hotel", Assistant(book_hotel_runnable))
-builder.add_edge("enter_book_hotel", "book_hotel")
-builder.add_node(
-    "book_hotel_safe_tools",
-    create_tool_node_with_fallback(book_hotel_safe_tools),
-)
-builder.add_node(
-    "book_hotel_sensitive_tools",
-    create_tool_node_with_fallback(book_hotel_sensitive_tools),
-)
-
-
-def route_book_hotel(
-    state: State,
-) -> Literal[
-    "leave_skill", "book_hotel_safe_tools", "book_hotel_sensitive_tools", "__end__"
-]:
-    route = tools_condition(state)
-    if route == END:
-        return END
-    tool_calls = state["messages"][-1].tool_calls
-    did_cancel = any(tc["name"] == CompleteOrEscalate.__name__ for tc in tool_calls)
-    if did_cancel:
-        return "leave_skill"
-    tool_names = [t.name for t in book_hotel_safe_tools]
-    if all(tc["name"] in tool_names for tc in tool_calls):
-        return "book_hotel_safe_tools"
-    return "book_hotel_sensitive_tools"
+# ######################################################################################################
+# # Hotel booking assistant
+# builder.add_node(
+#     "enter_book_hotel", create_entry_node("Hotel Booking Assistant", "book_hotel")
+# )
+# builder.add_node("book_hotel", Assistant(book_hotel_runnable))
+# builder.add_edge("enter_book_hotel", "book_hotel")
+# builder.add_node(
+#     "book_hotel_safe_tools",
+#     create_tool_node_with_fallback(book_hotel_safe_tools),
+# )
+# builder.add_node(
+#     "book_hotel_sensitive_tools",
+#     create_tool_node_with_fallback(book_hotel_sensitive_tools),
+# )
 
 
-builder.add_edge("book_hotel_sensitive_tools", "book_hotel")
-builder.add_edge("book_hotel_safe_tools", "book_hotel")
-builder.add_conditional_edges("book_hotel", route_book_hotel)
-
-######################################################################################################
-# Excursion assistant
-builder.add_node(
-    "enter_book_excursion",
-    create_entry_node("Trip Recommendation Assistant", "book_excursion"),
-)
-builder.add_node("book_excursion", Assistant(book_excursion_runnable))
-builder.add_edge("enter_book_excursion", "book_excursion")
-builder.add_node(
-    "book_excursion_safe_tools",
-    create_tool_node_with_fallback(book_excursion_safe_tools),
-)
-builder.add_node(
-    "book_excursion_sensitive_tools",
-    create_tool_node_with_fallback(book_excursion_sensitive_tools),
-)
+# def route_book_hotel(
+#     state: State,
+# ) -> Literal[
+#     "leave_skill", "book_hotel_safe_tools", "book_hotel_sensitive_tools", "__end__"
+# ]:
+#     route = tools_condition(state)
+#     if route == END:
+#         return END
+#     tool_calls = state["messages"][-1].tool_calls
+#     did_cancel = any(tc["name"] == CompleteOrEscalate.__name__ for tc in tool_calls)
+#     if did_cancel:
+#         return "leave_skill"
+#     tool_names = [t.name for t in book_hotel_safe_tools]
+#     if all(tc["name"] in tool_names for tc in tool_calls):
+#         return "book_hotel_safe_tools"
+#     return "book_hotel_sensitive_tools"
 
 
-def route_book_excursion(
-    state: State,
-) -> Literal[
-    "book_excursion_safe_tools",
-    "book_excursion_sensitive_tools",
-    "leave_skill",
-    "__end__",
-]:
-    route = tools_condition(state)
-    if route == END:
-        return END
-    tool_calls = state["messages"][-1].tool_calls
-    did_cancel = any(tc["name"] == CompleteOrEscalate.__name__ for tc in tool_calls)
-    if did_cancel:
-        return "leave_skill"
-    tool_names = [t.name for t in book_excursion_safe_tools]
-    if all(tc["name"] in tool_names for tc in tool_calls):
-        return "book_excursion_safe_tools"
-    return "book_excursion_sensitive_tools"
+# builder.add_edge("book_hotel_sensitive_tools", "book_hotel")
+# builder.add_edge("book_hotel_safe_tools", "book_hotel")
+# builder.add_conditional_edges("book_hotel", route_book_hotel)
+
+# ######################################################################################################
+# # Excursion assistant
+# builder.add_node(
+#     "enter_book_excursion",
+#     create_entry_node("Trip Recommendation Assistant", "book_excursion"),
+# )
+# builder.add_node("book_excursion", Assistant(book_excursion_runnable))
+# builder.add_edge("enter_book_excursion", "book_excursion")
+# builder.add_node(
+#     "book_excursion_safe_tools",
+#     create_tool_node_with_fallback(book_excursion_safe_tools),
+# )
+# builder.add_node(
+#     "book_excursion_sensitive_tools",
+#     create_tool_node_with_fallback(book_excursion_sensitive_tools),
+# )
 
 
-builder.add_edge("book_excursion_sensitive_tools", "book_excursion")
-builder.add_edge("book_excursion_safe_tools", "book_excursion")
-builder.add_conditional_edges("book_excursion", route_book_excursion)
+# def route_book_excursion(
+#     state: State,
+# ) -> Literal[
+#     "book_excursion_safe_tools",
+#     "book_excursion_sensitive_tools",
+#     "leave_skill",
+#     "__end__",
+# ]:
+#     route = tools_condition(state)
+#     if route == END:
+#         return END
+#     tool_calls = state["messages"][-1].tool_calls
+#     did_cancel = any(tc["name"] == CompleteOrEscalate.__name__ for tc in tool_calls)
+#     if did_cancel:
+#         return "leave_skill"
+#     tool_names = [t.name for t in book_excursion_safe_tools]
+#     if all(tc["name"] in tool_names for tc in tool_calls):
+#         return "book_excursion_safe_tools"
+#     return "book_excursion_sensitive_tools"
+
+
+# builder.add_edge("book_excursion_sensitive_tools", "book_excursion")
+# builder.add_edge("book_excursion_safe_tools", "book_excursion")
+# builder.add_conditional_edges("book_excursion", route_book_excursion)
 
 ######################################################################################################
 # Primary assistant
@@ -1399,9 +901,9 @@ def route_primary_assistant(
     state: State,
 ) -> Literal[
     "primary_assistant_tools",
-    "enter_update_flight",
-    "enter_book_hotel",
-    "enter_book_excursion",
+    "enter_sales_assistant",
+    # "enter_book_hotel",
+    # "enter_book_excursion",
     "__end__",
 ]:
     route = tools_condition(state)
@@ -1409,14 +911,14 @@ def route_primary_assistant(
         return END
     tool_calls = state["messages"][-1].tool_calls
     if tool_calls:
-        if tool_calls[0]["name"] == ToFlightBookingAssistant.__name__:
-            return "enter_update_flight"
-        elif tool_calls[0]["name"] == ToBookCarRental.__name__:
-            return "enter_book_car_rental"
-        elif tool_calls[0]["name"] == ToHotelBookingAssistant.__name__:
-            return "enter_book_hotel"
-        elif tool_calls[0]["name"] == ToBookExcursion.__name__:
-            return "enter_book_excursion"
+        if tool_calls[0]["name"] == ToSalesAssistant.__name__:
+            return "enter_sales_assistant"
+        # elif tool_calls[0]["name"] == ToBookCarRental.__name__:
+        #     return "enter_book_car_rental"
+        # elif tool_calls[0]["name"] == ToHotelBookingAssistant.__name__:
+        #     return "enter_book_hotel"
+        # elif tool_calls[0]["name"] == ToBookExcursion.__name__:
+        #     return "enter_book_excursion"
         return "primary_assistant_tools"
     raise ValueError("Invalid route")
 
@@ -1426,14 +928,14 @@ def route_primary_assistant(
 builder.add_conditional_edges(
     "primary_assistant",
     route_primary_assistant,
-    {
-        "enter_update_flight": "enter_update_flight",
-        "enter_book_car_rental": "enter_book_car_rental",
-        "enter_book_hotel": "enter_book_hotel",
-        "enter_book_excursion": "enter_book_excursion",
-        "primary_assistant_tools": "primary_assistant_tools",
-        END: END,
-    },
+    # {
+    #     "enter_update_flight": "enter_update_flight",
+    #     "enter_book_car_rental": "enter_book_car_rental",
+    #     "enter_book_hotel": "enter_book_hotel",
+    #     "enter_book_excursion": "enter_book_excursion",
+    #     "primary_assistant_tools": "primary_assistant_tools",
+    #     END: END,
+    # },
 )
 builder.add_edge("primary_assistant_tools", "primary_assistant")
 
@@ -1444,10 +946,10 @@ def route_to_workflow(
     state: State,
 ) -> Literal[
     "primary_assistant",
-    "update_flight",
-    "book_car_rental",
-    "book_hotel",
-    "book_excursion",
+    "sales_assistant",
+    # "book_car_rental",
+    # "book_hotel",
+    # "book_excursion",
 ]:
     """If we are in a delegated state, route directly to the appropriate assistant."""
     dialog_state = state.get("dialog_state")
@@ -1463,10 +965,10 @@ memory = SqliteSaver.from_conn_string(":memory:")
 part_4_graph = builder.compile(
     checkpointer=memory,
     # Let the user approve or deny the use of sensitive tools
-    interrupt_before=[
-        "update_flight_sensitive_tools",
-        "book_car_rental_sensitive_tools",
-        "book_hotel_sensitive_tools",
-        "book_excursion_sensitive_tools",
-    ],
+    # interrupt_before=[
+    #     "update_flight_sensitive_tools",
+    #     "book_car_rental_sensitive_tools",
+    #     "book_hotel_sensitive_tools",
+    #     "book_excursion_sensitive_tools",
+    # ],
 )
