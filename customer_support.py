@@ -574,6 +574,7 @@ trade_in_runnable = trade_in_prompt | llm.bind_tools(
 )
 
 # Rephraser Assistant
+
 def get_last_message(state: dict)-> str:
     return {"response": state["messages"][-1].content}
 
@@ -609,6 +610,11 @@ rephraser_prompt = ChatPromptTemplate.from_messages(
 rephraserLambda = RunnableLambda(get_last_message)
 rephraser_runnable = rephraserLambda | rephraser_prompt | llm
 
+def rephraser_node(state: dict) -> dict:
+    output = rephraser_runnable.invoke(state)
+    return {
+        "user_info": state["user_info"]
+    }
 
 # Primary Assistant
 class ToSalesAssistant(BaseModel):
@@ -786,7 +792,7 @@ builder.add_conditional_edges(SALES_ASSISTANT, route_sales_assistant, {
 # Rephraser
 
 
-builder.add_node(REPHRASER, rephraser_runnable)
+builder.add_node(REPHRASER, rephraser_node)
 builder.add_edge(REPHRASER, END)
 
 
@@ -1024,3 +1030,14 @@ part_4_graph = builder.compile(
     #     "book_excursion_sensitive_tools",
     # ],
 )
+
+if __name__ == "__main__":
+    config = {
+        "thread_id": "123"
+    }
+
+    print(part_4_graph.invoke({
+        "messages": [("human", "I want to buy an RV.")],
+    },
+    config=config
+    ))
